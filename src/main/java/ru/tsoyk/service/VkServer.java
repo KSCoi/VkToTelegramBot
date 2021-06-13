@@ -16,10 +16,10 @@ public class VkServer {
             Thread.sleep(300);
 
             try {
-                Message message = vk.getMessageText();
-                if (message != null)    {
+               // Message message = vk.getMessageText();
+               // if (message != null)    {
                    // execute(message);
-                }
+                //}
             }
             catch ( Exception e )   {
 

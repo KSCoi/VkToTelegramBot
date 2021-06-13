@@ -1,5 +1,6 @@
 package ru.tsoyk.service;
 
+import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.objects.messages.Message;
@@ -12,6 +13,7 @@ import com.vk.api.sdk.queries.messages.MessagesGetLongPollHistoryQuery;
 import com.vk.api.sdk.queries.messages.MessagesGetLongPollServerQuery;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import netscape.javascript.JSObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.tsoyk.config.VkConfig;
@@ -29,13 +31,17 @@ public class Vk {
     VkConfig vkConfig;
 
     static String server;
+    static String key;
 
     public Vk(VkConfig vkConfig) {
         this.vkConfig = vkConfig;
         try {
-            VkConfig.ts  = vkConfig.getVkApi().messages()
-                    .getLongPollServer(vkConfig.getActor()).execute().getTs();
-           // server = vkConfig
+            VkConfig.ts  = Integer.valueOf(vkConfig.getVkApi().groups()
+                    .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId()).execute().getTs());
+            server = vkConfig.getVkApi().groups()
+                    .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId()).execute().getServer();
+            key = vkConfig.getVkApi().groups()
+                    .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId()).execute().getKey();
         }
         catch (Exception e) {
             log.debug(e.getStackTrace().toString());
@@ -43,14 +49,13 @@ public class Vk {
 
     }
 
-    public Message getMessageText() throws ClientException, ApiException {
+    public JsonObject getMessageText() throws ClientException, ApiException {
         MessagesGetLongPollHistoryQuery eventsQuery = vkConfig.getVkApi().messages()
                 .getLongPollHistory(vkConfig.getActor()).ts(VkConfig.ts);
-//         GetLongPollEventsQuery eventsQuery1 = vkConfig.getVkApi().longPoll()
-//                 .getEvents(vkConfig.getVkApi().messages().getLongPollServer(vkConfig.getActor())
-//                         .execute().getServer(), vkConfig.getVkApi().messages().getLongPollServer(vkConfig.getActor())
-//                         .execute().getKey(),VkConfig.ts);
-//        System.out.println(eventsQuery1.execute().getUpdates());
+
+        GetLongPollEventsQuery eventsQuery1 = vkConfig.getVkApi().longPoll()
+                .getEvents(server,key,VkConfig.ts);
+        System.out.println(eventsQuery1.execute().getUpdates());
         try {
 
         } catch (Exception e) {
@@ -60,35 +65,31 @@ public class Vk {
         if (maxMsgId > 0){
             eventsQuery.maxMsgId(maxMsgId);
         }
-        List<Message> messages = eventsQuery
-                .execute()
-                .getMessages()
-                .getItems();
-        System.out.println(eventsQuery.execute());
+        List<JsonObject> messages = eventsQuery1.execute().getUpdates();
+        System.out.println(messages.get(0).getAsString());
 
         if (!messages.isEmpty()) {
             try {
-                VkConfig.ts = vkConfig.getVkApi().messages()
-                        .getLongPollServer(vkConfig.getActor())
+                VkConfig.ts = Integer.valueOf(vkConfig.getVkApi().groups()
+                        .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId())
                         .execute()
-                        .getTs();
-                System.out.println(messages.get(0).getText());
+                        .getTs());
 
             } catch (ClientException e) {
                 e.printStackTrace();
 
             }
         }
-        if (!messages.isEmpty() && !messages.get(0).isOut()) {
+        if (!messages.isEmpty() && !messages.get(0).isJsonNull()) {
             /*
             messageId - максимально полученный ID, нужен, чтобы не было ошибки 10 internal server error,
             который является ограничением в API VK. В случае, если ts слишком старый (больше суток),
             а max_msg_id не передан, метод может вернуть ошибку 10 (Internal server error).
              */
-            int messageId = messages.get(0).getId();
-            if (messageId > maxMsgId){
-                maxMsgId = messageId;
-            }
+            //int messageId = messages.get(0);
+            //if (messageId > maxMsgId){
+            //    maxMsgId = messageId;
+           // }
             return messages.get(0);
         }
         return null;

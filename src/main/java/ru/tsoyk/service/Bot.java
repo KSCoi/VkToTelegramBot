@@ -1,5 +1,6 @@
 package ru.tsoyk.service;
 
+import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.queries.messages.MessagesGetLongPollHistoryQuery;
@@ -56,8 +57,8 @@ public class Bot extends TelegramLongPollingBot {
         }
 
         if(text.contains("/new"))   {
-            com.vk.api.sdk.objects.messages.Message message1 = vk.getMessageText();
-            answerMessage.setText(message1.getText());
+            JsonObject jsonObject = vk.getMessageText();
+            answerMessage.setText(jsonObject.toString());
 
         }
 
