@@ -3,9 +3,11 @@ package ru.tsoyk.service;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.objects.messages.Message;
+import com.vk.api.sdk.objects.messages.responses.GetLongPollHistoryResponse;
 import com.vk.api.sdk.objects.users.Fields;
 import com.vk.api.sdk.objects.users.User;
 import com.vk.api.sdk.objects.users.UserMin;
+import com.vk.api.sdk.queries.longpoll.GetLongPollEventsQuery;
 import com.vk.api.sdk.queries.messages.MessagesGetLongPollHistoryQuery;
 import com.vk.api.sdk.queries.messages.MessagesGetLongPollServerQuery;
 import lombok.Getter;
@@ -16,19 +18,24 @@ import ru.tsoyk.config.VkConfig;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 @Slf4j
 public class Vk {
 
+    private static int maxMsgId = -1;
     final
     VkConfig vkConfig;
+
+    static String server;
 
     public Vk(VkConfig vkConfig) {
         this.vkConfig = vkConfig;
         try {
             VkConfig.ts  = vkConfig.getVkApi().messages()
                     .getLongPollServer(vkConfig.getActor()).execute().getTs();
+           // server = vkConfig
         }
         catch (Exception e) {
             log.debug(e.getStackTrace().toString());
@@ -36,13 +43,28 @@ public class Vk {
 
     }
 
-    public String getMessageText() throws ClientException, ApiException {
+    public Message getMessageText() throws ClientException, ApiException {
         MessagesGetLongPollHistoryQuery eventsQuery = vkConfig.getVkApi().messages()
                 .getLongPollHistory(vkConfig.getActor()).ts(VkConfig.ts);
+//         GetLongPollEventsQuery eventsQuery1 = vkConfig.getVkApi().longPoll()
+//                 .getEvents(vkConfig.getVkApi().messages().getLongPollServer(vkConfig.getActor())
+//                         .execute().getServer(), vkConfig.getVkApi().messages().getLongPollServer(vkConfig.getActor())
+//                         .execute().getKey(),VkConfig.ts);
+//        System.out.println(eventsQuery1.execute().getUpdates());
+        try {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(eventsQuery.execute().getMessages().getItems().get(0).getText());
+        if (maxMsgId > 0){
+            eventsQuery.maxMsgId(maxMsgId);
+        }
         List<Message> messages = eventsQuery
                 .execute()
                 .getMessages()
                 .getItems();
+        System.out.println(eventsQuery.execute());
 
         if (!messages.isEmpty()) {
             try {
@@ -50,6 +72,7 @@ public class Vk {
                         .getLongPollServer(vkConfig.getActor())
                         .execute()
                         .getTs();
+                System.out.println(messages.get(0).getText());
 
             } catch (ClientException e) {
                 e.printStackTrace();
@@ -63,8 +86,10 @@ public class Vk {
             а max_msg_id не передан, метод может вернуть ошибку 10 (Internal server error).
              */
             int messageId = messages.get(0).getId();
-
-            return messages.get(0).getText();
+            if (messageId > maxMsgId){
+                maxMsgId = messageId;
+            }
+            return messages.get(0);
         }
         return null;
 

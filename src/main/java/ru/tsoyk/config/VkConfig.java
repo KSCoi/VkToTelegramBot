@@ -31,6 +31,7 @@ public class VkConfig {
 
     public static int ts;
 
+
     VkConfig(@Value("${access_token}") String vkToken, @Value("${vkGroupId}")Integer vkGroupId) {
         this.vkToken = vkToken;
         this.vkGroupId = vkGroupId;

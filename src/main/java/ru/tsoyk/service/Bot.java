@@ -1,10 +1,13 @@
 package ru.tsoyk.service;
 
+import com.vk.api.sdk.exceptions.ApiException;
+import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.queries.messages.MessagesGetLongPollHistoryQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.tsoyk.config.BotConfiguration;
@@ -18,61 +21,44 @@ public class Bot extends TelegramLongPollingBot {
 
     private final BotConfiguration configuration;
 
-    private final VkConfig vkConfig;
+    //private final VkConfig vkConfig;
 
-    public Bot(BotConfiguration configuration, VkConfig vkConfig)  {
+    private final Vk vk;
+
+    public Bot(BotConfiguration configuration, Vk vk)  {
         this.configuration = configuration;
-        this.vkConfig = vkConfig;
+        this.vk = vk;
     }
-
 
     @Override
     public void onUpdateReceived(Update update) {
         if(update.hasMessage() && update.getMessage().hasText())    {
-            sendMsg(update);
+        }
+
+        try {
+        sendMsgToChannel(update);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
-
-
-    public void sendMsg(Update update)   {
+    public void sendMsgToChannel(Update update) throws ClientException, ApiException {
+        Message message = update.getChannelPost();
         SendMessage answerMessage = new SendMessage();
         String text;
         String chatId;
-        if(update.getMessage() != null) {
-            chatId = update.getMessage().getChatId().toString();
-            answerMessage.setChatId(chatId);
-            text = update.getMessage().getText().toLowerCase(Locale.ROOT);
-        }
-        else {
-            chatId =update.getChannelPost().getChatId().toString();
-            answerMessage.setChatId(chatId);
-            text = update.getChannelPost().getText();
-        }
+        chatId = message.getChatId().toString();
+        answerMessage.setChatId(chatId);
+        text = message.getText().toLowerCase(Locale.ROOT);
 
         if(text.contains("/start")) {
-            answerMessage.setText("Hello"); }
-
-        else if(text.contains("/new"))   {
-            try {
-              VkConfig.ts = vkConfig.getVkApi().messages().getLongPollServer(vkConfig.getActor()).execute().getTs();
-                System.out.println(VkConfig.ts + " THIS IS TS");
-                answerMessage.setText("?");
-                MessagesGetLongPollHistoryQuery eventsQuery = vkConfig.getVkApi().messages()
-                        .getLongPollHistory(vkConfig.getActor()).ts(VkConfig.ts);
-                System.out.println(eventsQuery.execute().getMessages().getCount() + "COUNT");
-
-               // System.out.println(vkConfig.getVkApi().messages().getById(vkConfig.getActor(),0).execute().getItems().get(0).toString());
-
-                Vk vk = new Vk(vkConfig);
-                vk.some();
-                List var = vk.getUsersNameFromGroup(vkConfig.getVkGroupId().toString());
-            }
-            catch (Exception e)   {
-
-            }
+            answerMessage.setText("Hello");
         }
-        else    {
-            answerMessage.setText("Unknown command");
+
+        if(text.contains("/new"))   {
+            com.vk.api.sdk.objects.messages.Message message1 = vk.getMessageText();
+            answerMessage.setText(message1.getText());
+
         }
 
         try {
