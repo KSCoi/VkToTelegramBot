@@ -23,13 +23,13 @@ import java.net.http.HttpClient;
 @PropertySource("classpath:application.properties")
 public class VkConfig {
 
-    //@Value("${vkGroupId}")
     final Integer vkGroupId;
 
-    //@Value("${access_token}")
     final String vkToken;
 
     public static int ts;
+
+    public static int maxMsgId=-1;
 
 
     VkConfig(@Value("${access_token}") String vkToken, @Value("${vkGroupId}")Integer vkGroupId) {

@@ -1,10 +1,8 @@
 package ru.tsoyk.service;
 
-import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
-import com.vk.api.sdk.queries.messages.MessagesGetLongPollHistoryQuery;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -14,61 +12,74 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.tsoyk.config.BotConfiguration;
 import ru.tsoyk.config.VkConfig;
 
-import java.util.List;
-import java.util.Locale;
-
+@Slf4j
 @Component
 public class Bot extends TelegramLongPollingBot {
 
     private final BotConfiguration configuration;
 
-    //private final VkConfig vkConfig;
-
+    private static String chatId;
     private final Vk vk;
 
-    public Bot(BotConfiguration configuration, Vk vk)  {
+    private final VkConfig vkConfig;
+
+    public Bot(BotConfiguration configuration, Vk vk,VkConfig vkConfig)  {
         this.configuration = configuration;
         this.vk = vk;
+        this.vkConfig = vkConfig;
     }
 
     @Override
     public void onUpdateReceived(Update update) {
-        if(update.hasMessage() && update.getMessage().hasText())    {
-        }
-
-        try {
-        sendMsgToChannel(update);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        while (true) {
+            try {
+                sendMsgToChannel(update);
+            }
+            catch (Exception e) {
+                try {
+                    Vk.key = vk.vkConfig.getVkApi().groups()
+                            .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId()).execute().getKey();
+                    sendMsgToChannel(update);
+                    }
+                catch (ClientException | ApiException apiException )  {
+                    for(StackTraceElement element : apiException.getStackTrace())   {
+                        log.debug(element.toString());
+                    }
+                }
+            }
         }
     }
     public void sendMsgToChannel(Update update) throws ClientException, ApiException {
         Message message = update.getChannelPost();
         SendMessage answerMessage = new SendMessage();
-        String text;
-        String chatId;
         chatId = message.getChatId().toString();
+        System.out.println(chatId+ " THIS IS CHAT ID");
         answerMessage.setChatId(chatId);
-        text = message.getText().toLowerCase(Locale.ROOT);
-
-        if(text.contains("/start")) {
-            answerMessage.setText("Hello");
-        }
-
-        if(text.contains("/new"))   {
-            JsonObject jsonObject = vk.getMessageText();
-            answerMessage.setText(jsonObject.toString());
-
-        }
-
-        try {
-            execute(answerMessage);
-        }
-        catch (TelegramApiException e)  {
-            e.printStackTrace();
+            for (String s : vk.getMessageText()) {
+                answerMessage.setText(s + "\n");
+                try {
+                    execute(answerMessage);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+            }
+    }
+    public void sendMsgToChannelWithoutUpdate(String chatId) throws ClientException, ApiException {
+        SendMessage answerMessage = new SendMessage();
+        if(chatId!=null)    {
+            answerMessage.setChatId(chatId);
+            for (String s : vk.getMessageText()) {
+                answerMessage.setText(s + "\n");
+                try {
+                    execute(answerMessage);
+                }
+                catch (TelegramApiException e) {
+                 e.printStackTrace();
+                }
+            }
         }
     }
+
 
     @Override
     public String getBotUsername() {
