@@ -31,8 +31,11 @@ public class TelegramBotInitializer {
         try {
             telegramBotsApi.registerBot(bot);
         }
-        catch (TelegramApiRequestException e)  {
-            log.error(e.getStackTrace().toString());
+        catch (TelegramApiRequestException exception)  {
+            for (StackTraceElement element : exception.getStackTrace()) {
+                log.info(element.toString());
+            }
+
         }
     }
 

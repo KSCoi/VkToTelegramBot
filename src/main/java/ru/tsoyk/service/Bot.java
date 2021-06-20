@@ -43,7 +43,7 @@ public class Bot extends TelegramLongPollingBot {
                     }
                 catch (ClientException | ApiException apiException )  {
                     for(StackTraceElement element : apiException.getStackTrace())   {
-                        log.debug(element.toString());
+                        log.info(element.toString());
                     }
                 }
             }
@@ -59,8 +59,10 @@ public class Bot extends TelegramLongPollingBot {
                 answerMessage.setText(s + "\n");
                 try {
                     execute(answerMessage);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
+                } catch (TelegramApiException exception) {
+                    for (StackTraceElement element : exception.getStackTrace()) {
+                        log.info(element.toString());
+                    }
                 }
             }
     }
@@ -73,8 +75,10 @@ public class Bot extends TelegramLongPollingBot {
                 try {
                     execute(answerMessage);
                 }
-                catch (TelegramApiException e) {
-                 e.printStackTrace();
+                catch (TelegramApiException exception) {
+                    for (StackTraceElement element : exception.getStackTrace()) {
+                        log.info(element.toString());
+                    }
                 }
             }
         }

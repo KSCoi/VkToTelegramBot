@@ -37,7 +37,7 @@ public class Vk {
         }
         catch (Exception e) {
             for(StackTraceElement el:e.getStackTrace()) {
-                log.debug(el.toString());
+                log.info(el.toString());
             }
         }
 
@@ -56,6 +56,9 @@ public class Vk {
         catch (ApiException exception)  {
             key = vkConfig.getVkApi().groups()
                     .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId()).execute().getKey();
+            for(StackTraceElement e:exception.getStackTrace())  {
+                log.info(e.toString());
+            };
         }
 
         if (!arrayList.isEmpty()) {
@@ -65,8 +68,10 @@ public class Vk {
                         .execute()
                         .getTs());
 
-            } catch (ClientException e) {
-                e.printStackTrace();
+            } catch (ClientException exception) {
+                for(StackTraceElement element:exception.getStackTrace())  {
+                    log.info(element.toString());
+                };
 
             }
         }

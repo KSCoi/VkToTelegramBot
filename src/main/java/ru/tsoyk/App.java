@@ -34,7 +34,7 @@ import ru.tsoyk.config.TelegramBotInitializer;
                 }
                 catch ( ClientException | ApiException exception)   {
                     for (StackTraceElement element:exception.getStackTrace()) {
-                        log.debug(element.toString());
+                        log.info(element.toString());
                     }
 
                 }
