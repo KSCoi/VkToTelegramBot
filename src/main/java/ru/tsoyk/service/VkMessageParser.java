@@ -280,7 +280,7 @@ public class VkMessageParser {
                         .getAsJsonPrimitive("from_id").toString())
                         .execute().get(0);
                 s.append("Новый пост в предложке от пользователя").append("\n")
-                        .append(user.getFirstName()).append(", ").append(user.getLastName()).append("\n")
+                        .append(user.getFirstName()).append(" ").append(user.getLastName()).append("\n")
                         .append("Текст поста: ").append(jsonObject.getAsJsonObject("object")
                         .getAsJsonPrimitive("text")).append("\n");
                 break;

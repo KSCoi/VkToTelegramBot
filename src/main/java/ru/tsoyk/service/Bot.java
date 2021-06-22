@@ -73,6 +73,7 @@ public class Bot extends TelegramLongPollingBot {
             for (String s : vk.getMessageText()) {
                 answerMessage.setText(s + "\n");
                 try {
+                    if(!answerMessage.getText().isEmpty() && !answerMessage.getText().isBlank())
                     execute(answerMessage);
                 }
                 catch (TelegramApiException exception) {
