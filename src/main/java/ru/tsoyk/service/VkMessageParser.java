@@ -18,8 +18,11 @@ public class VkMessageParser {
     }
 
     public StringBuilder eventJsonParser(JsonObject jsonObject) throws ClientException, ApiException {
-        StringBuilder s = new StringBuilder();
+        StringBuilder s = new StringBuilder("");
          String typeOfEvent = jsonObject.getAsJsonPrimitive("type").toString();
+         if(jsonObject.getAsJsonObject("object").getAsJsonPrimitive("from_id").toString()
+                 .contains(vkConfig.getVkGroupId().toString()))
+             return s;
          GetResponse user;
         System.out.println(jsonObject);
         switch (typeOfEvent)  {
@@ -269,6 +272,16 @@ public class VkMessageParser {
                         .getAsJsonPrimitive("video_id")).append("\n");
                 s.append("Текст отредактированного комментария: ")
                         .append(jsonObject.getAsJsonObject("object")
+                        .getAsJsonPrimitive("text")).append("\n");
+                break;
+            case("\"wall_post_new\""):
+                user = vkConfig.getVkApi().users().get(vkConfig.getActor())
+                        .userIds(jsonObject.getAsJsonObject("object")
+                        .getAsJsonPrimitive("from_id").toString())
+                        .execute().get(0);
+                s.append("Новый пост в предложке от пользователя").append("\n")
+                        .append(user.getFirstName()).append(", ").append(user.getLastName()).append("\n")
+                        .append("Текст поста: ").append(jsonObject.getAsJsonObject("object")
                         .getAsJsonPrimitive("text")).append("\n");
                 break;
             case("\"message_new\""):
