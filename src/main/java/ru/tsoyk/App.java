@@ -24,11 +24,8 @@ public class App extends SpringBootServletInitializer {
         new SpringApplicationBuilder(App.class)
                 .run(args);
         log.info("SERVER IS RUNNING!");
-        //while (true) {
             try {
-                //Thread.sleep(1000);
                 new App().sendMessage();
-                //tgInit.bot.sendMsgToChannelWithoutUpdate("-1001435977133");
             } catch (NullPointerException e) {
                 log.warn("nullpointer", e);
             } catch (ClientException | ApiException exception) {
@@ -36,7 +33,7 @@ public class App extends SpringBootServletInitializer {
                 if (exception instanceof ApiException)
                     log.error(((ApiException) exception).getDescription());
             }
-        //}
+
     }
     @Scheduled(fixedRate = 1000)
     public void sendMessage() throws ClientException, ApiException {
