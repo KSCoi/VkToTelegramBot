@@ -10,10 +10,10 @@ import com.vk.api.sdk.objects.messages.AudioMessage;
 import com.vk.api.sdk.objects.messages.MessageAttachment;
 import com.vk.api.sdk.objects.messages.MessageAttachmentType;
 import com.vk.api.sdk.objects.photos.PhotoSizes;
-import com.vk.api.sdk.objects.users.User;
 import com.vk.api.sdk.objects.video.Video;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.config.VkConfig;
 
 @Service
@@ -21,7 +21,7 @@ public class AttachmentsParser implements VkParserInterface {
     @Autowired
     VkConfig vkConfig;
 
-    public String parse(JsonObject json) throws ClientException, ApiException {
+    public String parse(JsonObject json, EventTypes eventType) throws ClientException, ApiException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         StringBuilder s = new StringBuilder("");
         MessageAttachment[] attachments = gson.fromJson(json.getAsJsonObject("object")

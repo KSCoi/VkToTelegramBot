@@ -9,7 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.tsoyk.tg.service.EventTypes;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.tg.service.TgUpdateReceiver;
 import ru.tsoyk.vk.config.VkConfig;
 
@@ -49,7 +49,7 @@ public class VkEventsReceiver {
     }
 
     public List<String> getMessageText(List<EventTypes> eventTypesList) throws ClientException, ApiException {
-        if(eventTypesList==null || eventTypesList.isEmpty())    {
+        if (eventTypesList == null || eventTypesList.isEmpty()) {
             eventTypesList = tgUpdateReceiver.getAllEvents();
         }
         List<String> arrayList = new ArrayList<>();
@@ -58,12 +58,22 @@ public class VkEventsReceiver {
 
         try {
             for (JsonObject j : eventsQuery.execute().getUpdates()) {
+                System.out.println(j);
                 EventTypes currentEvent = getEventFromJson(j);
-                if(!currentEvent.equals(EventTypes.UNKNOWN_EVENT) && eventTypesList.contains(currentEvent))   {
-                    arrayList.add(eventsParserFactory.getVkParser(currentEvent).parse(j));
+                if (!currentEvent.equals(EventTypes.UNKNOWN_EVENT) && eventTypesList.contains(currentEvent)) {
+                    arrayList.add(eventsParserFactory.getVkParser(currentEvent).parse(j, currentEvent));
+                } else if (currentEvent.equals(EventTypes.UNKNOWN_EVENT)) {
+                    log.warn("UNKNOWN EVENT", j.toString());
+                    VkConfig.ts = Integer.valueOf(vkConfig.getVkApi().groups()
+                            .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId())
+                            .execute()
+                            .getTs());
                 }
-                else if (currentEvent.equals(EventTypes.UNKNOWN_EVENT)) {
-                    log.warn("UNKNOWN EVENT",j.toString());
+                else if(!eventTypesList.contains(currentEvent)) {
+                    VkConfig.ts = Integer.valueOf(vkConfig.getVkApi().groups()
+                            .getLongPollServer(vkConfig.getActor(), vkConfig.getVkGroupId())
+                            .execute()
+                            .getTs());
                 }
             }
         } catch (ApiException exception) {
@@ -93,21 +103,21 @@ public class VkEventsReceiver {
     private EventTypes getEventFromJson(JsonObject j) {
         String type = j.getAsJsonPrimitive("type").toString();
         EventTypes currentEvent;
-        if(type.equals("\"message_new\""))
-            currentEvent =  EventTypes.MESSAGE_NEW;
+        if (type.equals("\"message_new\""))
+            currentEvent = EventTypes.MESSAGE_NEW;
 //        else if(type.contains("delete"))
 //            currentEvent = EventTypes.DELETED_EVENT;
         else if (type.equals("\"message_reply\""))
             currentEvent = EventTypes.MESSAGE_REPLY;
-        else if(type.equals("\"wall_post_new\""))
+        else if (type.equals("\"wall_post_new\""))
             currentEvent = EventTypes.WALL_POST_NEW;
-        else if(type.contains("wall_reply"))
+        else if (type.contains("wall_reply"))
             currentEvent = EventTypes.WALL_REPLY;
         else if (type.contains("photo_comment"))
             currentEvent = EventTypes.PHOTO_COMMENT_NEW;
-        else if(type.contains("video_comment"))
+        else if (type.contains("video_comment"))
             currentEvent = EventTypes.VIDEO_COMMENT_NEW;
-        else if(type.contains("board_post"))
+        else if (type.contains("board_post"))
             currentEvent = EventTypes.BOARD_POST_NEW;
         else
             currentEvent = EventTypes.UNKNOWN_EVENT;

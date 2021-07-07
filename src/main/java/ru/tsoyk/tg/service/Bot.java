@@ -8,6 +8,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.service.VkEventsReceiver;
 import ru.tsoyk.tg.config.BotConfiguration;
 import ru.tsoyk.vk.config.VkConfig;
@@ -55,14 +56,16 @@ public class Bot extends TelegramLongPollingBot {
         SendMessage answerMessage = new SendMessage();
         if (chatId != null) {
             answerMessage.setChatId(chatId);
+
             for (String s : vkEventsReceiver.getMessageText(updateReceiver.getCurrentEvents())) {
                 answerMessage.setText(s + "\n");
                 try {
-                    if (!answerMessage.getText().isEmpty() && !answerMessage.getText().isBlank())   {
+                    if (!answerMessage.getText().isEmpty() && !answerMessage.getText().isBlank()) {
                         execute(answerMessage);
                     }
                 } catch (TelegramApiException exception) {
                     log.error("Api exception", exception);
+
                 }
             }
         }

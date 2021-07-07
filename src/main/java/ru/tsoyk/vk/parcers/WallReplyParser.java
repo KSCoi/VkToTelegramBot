@@ -5,15 +5,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
+import com.vk.api.sdk.objects.groups.Group;
 import com.vk.api.sdk.objects.users.User;
 import com.vk.api.sdk.objects.wall.WallComment;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Service;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.config.VkConfig;
 
 @Service
-@Configurable //не помогает видимо без @EnableSpringConfigured в APP
 public class WallReplyParser implements VkParserInterface {
 
     @Autowired
@@ -24,15 +24,21 @@ public class WallReplyParser implements VkParserInterface {
     DeletedEventParser deletedEventParser;
 
     @Override
-    public String parse(JsonObject json) throws ClientException, ApiException {
+    public String parse(JsonObject json, EventTypes eventType) throws ClientException, ApiException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         StringBuilder s = new StringBuilder("");
         String type = json.getAsJsonPrimitive("type").toString();
+        User user;
+        Group group;
+        if (isEventFromGroup(json, eventType)) {
+            group = connectToGroup(json, eventType, vkConfig);
+            user = new User();
+            user.setFirstName(group.getName());
+            user.setLastName(group.getType().toString());
+        } else
+            user = connectToUser(json, eventType, vkConfig);
+
         if (type.equals("\"wall_reply_delete\"")) {
-            User user = vkConfig.getVkApi().users().get(vkConfig.getActor())
-                    .userIds(json.getAsJsonObject("object")
-                            .getAsJsonPrimitive("deleter_id").toString())
-                    .execute().get(0);
             s.append("Пользователь: \"").append(user.getFirstName()).append(" ")
                     .append(user.getLastName()).append("\" удалил комментарий под постом: \n")
                     .append(getDeletedPostCommentUrl(json))
@@ -40,9 +46,12 @@ public class WallReplyParser implements VkParserInterface {
             return s.toString();
         }
         WallComment wallComment = gson.fromJson(json.getAsJsonObject("object"), WallComment.class);
-        User user = vkConfig.getVkApi().users().get(vkConfig.getActor())
-                .userIds(wallComment.getFromId().toString())
-                .execute().get(0);
+       /* if(wallComment.getReplyToUser()!=null)  {
+            if(!isEventFromGroup(json, eventType))  {
+                User replyToUser = connectToUser(json,eventType,vkConfig);
+                s.append("Ответ пользователю c id");
+            }
+        }*/
         switch (type) {
             case "\"wall_reply_new\"":
                 s.append("Новый комментарий под постом: ").append(getPostCommentUrl(wallComment));
@@ -65,7 +74,7 @@ public class WallReplyParser implements VkParserInterface {
                 break;
         }
         if (wallComment.getAttachments() != null) {
-            s.append(attachmentsParser.parse(json));
+            s.append(attachmentsParser.parse(json, eventType));
         }
         return s.toString();
     }

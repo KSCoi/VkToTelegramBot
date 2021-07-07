@@ -6,9 +6,11 @@ import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.objects.board.TopicComment;
+import com.vk.api.sdk.objects.groups.Group;
 import com.vk.api.sdk.objects.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.config.VkConfig;
 
 @Service
@@ -21,7 +23,7 @@ public class TopicCommentParser implements VkParserInterface {
     DeletedEventParser deletedEventParser;
 
     @Override
-    public String parse(JsonObject json) throws ClientException, ApiException {
+    public String parse(JsonObject json, EventTypes eventType) throws ClientException, ApiException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         StringBuilder s = new StringBuilder("");
         String type = json.getAsJsonPrimitive("type").toString();
@@ -29,15 +31,21 @@ public class TopicCommentParser implements VkParserInterface {
                 .getAsJsonPrimitive("topic_id").toString().replaceAll("\"", "");
         String topicOwnerId = json.getAsJsonObject("object")
                 .getAsJsonPrimitive("topic_owner_id").toString().replaceAll("\"", "");
+        User user;
+        Group group;
+        if (isEventFromGroup(json, eventType)) {
+            group = connectToGroup(json, eventType, vkConfig);
+            user = new User();
+            user.setFirstName(group.getName());
+            user.setLastName(group.getType().toString());
+        } else
+            user = connectToUser(json, eventType, vkConfig);
         if (type.contains("delete")) {
             s.append(" Удален комментарий в обсуждении: \n")
                     .append(getDeletedBoardCommentUrl(topicId, topicOwnerId));
             return s.toString();
         }
         TopicComment topicComment = gson.fromJson(json.getAsJsonObject("object"), TopicComment.class);
-        User user = vkConfig.getVkApi().users().get(vkConfig.getActor())
-                .userIds(topicComment.getFromId().toString())
-                .execute().get(0);
         switch (type) {
             case "\"board_post_new\"":
                 s.append("Новый комментарий в обсуждении: ").append(getBoardCommentUrl(topicComment, topicId, topicOwnerId));
@@ -60,7 +68,7 @@ public class TopicCommentParser implements VkParserInterface {
                 break;
         }
         if (topicComment.getAttachments() != null) {
-            s.append(attachmentsParser.parse(json));
+            s.append(attachmentsParser.parse(json, eventType));
         }
         return s.toString();
     }

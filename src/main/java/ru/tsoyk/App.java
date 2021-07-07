@@ -7,14 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.tsoyk.tg.init.TelegramBotInitializer;
 
-
-// Аннотация, которая объединяет в себя @Configuration, @EnableAutoConfiguration, @ComponentScan
 @SpringBootApplication()
 @Component
 @Slf4j
+@EnableScheduling
 public class App extends SpringBootServletInitializer {
     @Autowired
     static TelegramBotInitializer tgInit;
@@ -23,38 +24,23 @@ public class App extends SpringBootServletInitializer {
         new SpringApplicationBuilder(App.class)
                 .run(args);
         log.info("SERVER IS RUNNING!");
-        while (true) {
+        //while (true) {
             try {
-                Thread.sleep(1000);
-                tgInit.bot.sendMsgToChannelWithoutUpdate("-1001435977133");
+                //Thread.sleep(1000);
+                new App().sendMessage();
+                //tgInit.bot.sendMsgToChannelWithoutUpdate("-1001435977133");
             } catch (NullPointerException e) {
                 log.warn("nullpointer", e);
             } catch (ClientException | ApiException exception) {
                 log.error("VkApi exception", exception);
-                if(exception instanceof ApiException)
+                if (exception instanceof ApiException)
                     log.error(((ApiException) exception).getDescription());
             }
-        }
-        // new App().runApp();
-
+        //}
     }
-
-   /* @PostConstruct
-        public void runApp() throws InterruptedException {
-            while (true)    {
-                try {
-                    Thread.sleep(500);
-                    Thread thread = new Thread();
-                    thread.start();
-                    bot.sendMsgToChannelWithoutUpdate("-1001435977133");
-                }
-                catch (NullPointerException  e) {
-                    //log.error("nullpointer",e);
-                }
-                catch ( ClientException | ApiException exception)   {
-                    log.error("VkApi exception",exception);
-                }
-            }
-        }*/
+    @Scheduled(fixedRate = 1000)
+    public void sendMessage() throws ClientException, ApiException {
+        tgInit.bot.sendMsgToChannelWithoutUpdate("-1001435977133");
+    }
 }
 

@@ -5,10 +5,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
+import com.vk.api.sdk.objects.groups.Group;
 import com.vk.api.sdk.objects.users.User;
 import com.vk.api.sdk.objects.wall.WallComment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.config.VkConfig;
 
 @Service
@@ -21,16 +23,21 @@ public class VideoCommentParser implements VkParserInterface {
     DeletedEventParser deletedEventParser;
 
     @Override
-    public String parse(JsonObject json) throws ClientException, ApiException {
+    public String parse(JsonObject json, EventTypes eventType) throws ClientException, ApiException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         StringBuilder s = new StringBuilder("");
         String type = json.getAsJsonPrimitive("type").toString();
-        System.out.println(json);
+        User user;
+        Group group;
+        if (isEventFromGroup(json, eventType)) {
+            group = connectToGroup(json, eventType, vkConfig);
+            user = new User();
+            user.setFirstName(group.getName());
+            user.setLastName(group.getType().toString());
+        } else
+            user = connectToUser(json, eventType, vkConfig);
+
         if (type.contains("_delete")) {
-            User user = vkConfig.getVkApi().users().get(vkConfig.getActor())
-                    .userIds(json.getAsJsonObject("object")
-                            .getAsJsonPrimitive("deleter_id").toString())
-                    .execute().get(0);
             s.append("Пользователь: ").append(user.getFirstName()).append(" ")
                     .append(user.getLastName()).append(" Удалил комментарий под видео: \n")
                     .append(getDeleteVideoCommentUrl(json));
@@ -41,9 +48,6 @@ public class VideoCommentParser implements VkParserInterface {
                 .getAsJsonPrimitive("video_owner_id").toString().replaceAll("\"", "")));
         videoComment.setId(Integer.valueOf(json.getAsJsonObject("object")
                 .getAsJsonPrimitive("video_id").toString().replaceAll("\"", "")));
-        User user = vkConfig.getVkApi().users().get(vkConfig.getActor())
-                .userIds(videoComment.getFromId().toString())
-                .execute().get(0);
         switch (type) {
             case "\"video_comment_new\"":
                 s.append("Новый комментарий под видео: ").append(getPhotoCommentUrl(videoComment));
@@ -66,13 +70,13 @@ public class VideoCommentParser implements VkParserInterface {
                 break;
         }
         if (videoComment.getAttachments() != null) {
-            s.append(attachmentsParser.parse(json));
+            s.append(attachmentsParser.parse(json, eventType));
         }
         return s.toString();
     }
 
     public String getPhotoCommentUrl(WallComment wallComment) {
-        return "https://vk.com/videos" + vkConfig.getVkGroupId()*-1
+        return "https://vk.com/videos" + vkConfig.getVkGroupId() * -1
                 + "?z=video" + wallComment.getOwnerId() + "_" + wallComment.getId() + "\n";
     }
 

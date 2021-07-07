@@ -1,4 +1,4 @@
-package ru.tsoyk.tg.service;
+package ru.tsoyk.tg.models;
 
 public enum EventTypes {
     MESSAGE_REPLY,

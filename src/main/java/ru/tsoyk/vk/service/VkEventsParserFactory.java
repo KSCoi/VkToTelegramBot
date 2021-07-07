@@ -2,7 +2,7 @@ package ru.tsoyk.vk.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.tsoyk.tg.service.EventTypes;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.parcers.*;
 
 @Component
@@ -24,14 +24,14 @@ public class VkEventsParserFactory {
     @Autowired
     DeletedEventParser deletedEventParser;
 
-    public VkParserInterface getVkParser(EventTypes eventType)    {
+    public VkParserInterface getVkParser(EventTypes eventType) {
         VkParserInterface vkParserInterface = null;
-        switch (eventType)  {
+        switch (eventType) {
             case MESSAGE_NEW:
                 vkParserInterface = newMessageParser;
                 break;
             case MESSAGE_REPLY:
-                vkParserInterface =messageReplyParser;
+                vkParserInterface = messageReplyParser;
                 break;
             case PHOTO_COMMENT_NEW:
                 vkParserInterface = photoCommentParser;

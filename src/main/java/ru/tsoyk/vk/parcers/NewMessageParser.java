@@ -5,10 +5,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
+import com.vk.api.sdk.objects.groups.Group;
 import com.vk.api.sdk.objects.messages.Message;
 import com.vk.api.sdk.objects.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.tsoyk.tg.models.EventTypes;
 import ru.tsoyk.vk.config.VkConfig;
 
 @Service
@@ -20,13 +22,19 @@ public class NewMessageParser implements VkParserInterface {
     AttachmentsParser attachmentsParser;
 
     @Override
-    public String parse(JsonObject json) throws ClientException, ApiException {
+    public String parse(JsonObject json, EventTypes eventType) throws ClientException, ApiException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         StringBuilder s = new StringBuilder("");
         Message message = gson.fromJson(json.getAsJsonObject("object"), Message.class);
-        User user = vkConfig.getVkApi().users().get(vkConfig.getActor())
-                .userIds(message.getFromId().toString())
-                .execute().get(0);
+        User user;
+        Group group;
+        if (isEventFromGroup(json, eventType)) {
+            group = connectToGroup(json, eventType, vkConfig);
+            user = new User();
+            user.setFirstName(group.getName());
+            user.setLastName(group.getType().toString());
+        } else
+            user = connectToUser(json, eventType, vkConfig);
 
         s.append("Новое личное сообщение от пользователя: ").append(user.getFirstName())
                 .append(" ").append(user.getLastName()).append("\n");
@@ -34,7 +42,7 @@ public class NewMessageParser implements VkParserInterface {
         s.append("Текст сообщения:\" ").append(message.getText()).append("\"\n");
 
         if (message.getAttachments() != null) {
-            s.append(attachmentsParser.parse(json));
+            s.append(attachmentsParser.parse(json, eventType));
         }
         return s.toString();
     }

@@ -24,13 +24,14 @@ public class TelegramBotInitializer {
     public TelegramBotInitializer(Bot bot) {
         this.bot = bot;
     }
+
     @EventListener({ContextRefreshedEvent.class})
     public void init() throws TelegramApiException {
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
         try {
             telegramBotsApi.registerBot(bot);
         } catch (TelegramApiRequestException exception) {
-            log.error("tg init exception",exception);
+            log.error("tg init exception", exception);
         }
     }
 }
