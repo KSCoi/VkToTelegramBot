@@ -1,6 +1,7 @@
 package ru.tsoyk.tg.service;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -17,6 +18,7 @@ import java.util.List;
 // PartialBotApiMethod<? extends Serializable>  для всех видов сообщений:AnswerMessage,BotApiMethod,
 @Component
 @Getter
+@Slf4j
 public class TgUpdateReceiver {
     private final BotMessageHandler messageHandler;
     private final ReplyMessageService replyMessageService;
@@ -34,12 +36,18 @@ public class TgUpdateReceiver {
 
     public PartialBotApiMethod<? extends Serializable> handleUpdate(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
+            log.info(update.getMessage().getChatId() +":ID " +
+                    update.getMessage().getText(),"chatId + Message");
             Message message = update.getMessage();
             EventTypes eventType = getEventTypes(message);
             if (eventType == null)
                 eventType = EventTypes.UNKNOWN_EVENT;
             return messageHandler.handle(message, eventType);
-        } else {
+        }
+        else if(update.hasChannelPost())    {
+            return replyMessageService.sendTextMessage(update.getChannelPost().getChatId(),"без спама пожалуйста!");
+        }
+        else {
             return replyMessageService.sendTextMessage(update.getMessage().getChatId(), "I know only text message");
         }
 

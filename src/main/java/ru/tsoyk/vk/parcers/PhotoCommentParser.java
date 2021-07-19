@@ -28,11 +28,12 @@ public class PhotoCommentParser implements VkParserInterface {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         StringBuilder s = new StringBuilder("");
         String type = json.getAsJsonPrimitive("type").toString();
-        System.out.println(json);
         User user;
         Group group;
         if (isEventFromGroup(json, eventType)) {
             group = connectToGroup(json, eventType, vkConfig);
+            if(group.getId().equals(vkConfig.getVkGroupId()))
+                return "";
             user = new User();
             user.setFirstName(group.getName());
             user.setLastName(group.getType().toString());

@@ -58,6 +58,7 @@ public class VkEventsReceiver {
 
         try {
             for (JsonObject j : eventsQuery.execute().getUpdates()) {
+                System.out.println(j);
                 EventTypes currentEvent = getEventFromJson(j);
                 if (!currentEvent.equals(EventTypes.UNKNOWN_EVENT) && eventTypesList.contains(currentEvent)) {
                     arrayList.add(eventsParserFactory.getVkParser(currentEvent).parse(j, currentEvent));

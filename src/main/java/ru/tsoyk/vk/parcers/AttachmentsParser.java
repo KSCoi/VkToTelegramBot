@@ -28,7 +28,6 @@ public class AttachmentsParser implements VkParserInterface {
                 .getAsJsonArray("attachments"), MessageAttachment[].class);
         for (MessageAttachment attachment : attachments) {
             s.append("Приложен объект: ");
-            System.out.println(attachment);
             if (attachment.getType().equals(MessageAttachmentType.PHOTO)) {
                 s.append("фотография").append("\n");
                 int position = attachment.getPhoto().getSizes().size();

@@ -32,6 +32,8 @@ public class WallPostNewParcer implements VkParserInterface {
         Group group;
         if (isEventFromGroup(json, eventType)) {
             group = connectToGroup(json, eventType, vkConfig);
+            if(group.getId().equals(vkConfig.getVkGroupId()))
+                return "";
             user = new User();
             user.setFirstName(group.getName());
             user.setLastName(group.getType().toString());
@@ -43,8 +45,8 @@ public class WallPostNewParcer implements VkParserInterface {
                     .append(user.getFirstName()).append(" ").append(user.getLastName()).append("\"\n")
                     .append("По ссылке: ").append(getWallPostUrl(wallPost)).append("\n")
                     .append("Текст поста:\" ").append(wallPost.getText()).append("\"\n");
-            return s.toString();
         }
+        else return "";
         if (wallPost.getAttachments() != null) {
             s.append(attachmentsParser.parse(json, eventType));
         }
